@@ -17,6 +17,9 @@ def _handle_zeros_in_scale(scale, copy=True, constant_mask=None):
 
 
 class MinMaxScaler:
+    '''
+    即把input线性归一到某一个范围内（-1~1）。
+    '''
     _parameter_constraints: dict = {
         "feature_range": [tuple],
         "copy": ["boolean"],
@@ -43,6 +46,9 @@ class MinMaxScaler:
             del self.data_range_
 
     def fit(self, X):
+        '''
+        统计处x的最大最小值等信息
+        '''
         # Reset internal state before fitting
         self._reset()
         return self.partial_fit(X)
@@ -71,6 +77,9 @@ class MinMaxScaler:
         return self
 
     def transform(self, X):
+        '''
+        rescale+shift 使得取值范围在 self.feature_range[0] ~ self.feature_range[1]
+        '''
         X *= self.scale_.to(X.device)
         X += self.min_.to(X.device)
         if self.clip:
