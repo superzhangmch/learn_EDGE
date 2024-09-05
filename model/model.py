@@ -339,6 +339,9 @@ class DanceDecoder(nn.Module):
     ):
         batch_size, device = x.shape[0], x.device
 
+        # x.shape == [batch_size, 150, 151] = [bs, 5秒每秒30帧共150帧，24关节*6df+3+4=每帧的151维特征表示]， 每个关节用6个维度表示，是因为它对应一个3x3的正交矩阵，乃连续变换。该151维pose表示，是原始的，而不经过其他转化与其他形式表示
+        # times.shape = [batch_size], 当前扩散步的时间步
+        
         # project to latent space
         x = self.input_projection(x)
         # add the positional embeddings of the input sequence to provide temporal information
