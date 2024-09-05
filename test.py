@@ -75,7 +75,7 @@ def test(opt):
                 dirname = temp_dir.name
             # slice the audio file
             print(f"Slicing {wav_file}")
-            slice_audio(wav_file, 2.5, 5.0, dirname)
+            slice_audio(wav_file, 2.5, 5.0, dirname) # 切分成5秒长的片段，但是前后紧邻的片段要重叠2.5秒。生成舞蹈时，按每五秒用diffusion model生成一次，但是前2.5秒要用前一生成片段的后2.5s
             file_list = sorted(glob.glob(f"{dirname}/*.wav"), key=stringintkey)
             # randomly sample a chunk of length at most sample_size
             rand_idx = random.randint(0, len(file_list) - sample_size)
@@ -90,7 +90,7 @@ def test(opt):
                 # reps = jukemirlib.extract(
                 #     audio, layers=[66], downsample_target_rate=30
                 # )[66]
-                reps, _ = feature_func(file)
+                reps, _ = feature_func(file) # reps.shape == (150, 4800) = (5秒每秒30frame，每帧4800维的特征)
                 # save reps
                 if opt.cache_features:
                     featurename = os.path.splitext(file)[0] + ".npy"
