@@ -283,6 +283,9 @@ class GaussianDiffusion(nn.Module):
     
     @torch.no_grad()
     def long_ddim_sample(self, shape, cond, **kwargs):
+        '''
+         # 靠重叠法生成多个片段，然后合成长片段
+        '''
         batch, device, total_timesteps, sampling_timesteps, eta = shape[0], self.betas.device, self.n_timestep, 50, 1
         
         if batch == 1:
@@ -561,7 +564,7 @@ class GaussianDiffusion(nn.Module):
                 func_class = self.inpaint_loop
             elif mode == "normal":
                 func_class = self.ddim_sample
-            elif mode == "long":
+            elif mode == "long":  # 靠重叠法生成多个片段，然后合成长片段
                 func_class = self.long_ddim_sample
             else:
                 assert False, "Unrecognized inference mode"
@@ -579,6 +582,8 @@ class GaussianDiffusion(nn.Module):
         else:
             samples = shape
 
+        # samples.shape == [bs, 150=5秒共150帧, 151=pose的表示])
+        # pose的151个特征的取值范围不等，训练的时候做了normalize, 把这151个维度的每一维，都线性映射到了-1~1的范围内。所以这里要unnormalize，弄回原本的数据分布。是在151维的每一维度上分别独立进行的
         samples = normalizer.unnormalize(samples)
 
         if samples.shape[2] == 151:
