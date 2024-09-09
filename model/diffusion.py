@@ -590,14 +590,19 @@ class GaussianDiffusion(nn.Module):
             sample_contact, samples = torch.split(
                 samples, (4, samples.shape[2] - 4), dim=2
             )
+            # sample_contact: 脚与地面的接触
+            # 现在 samples.shape = [bs, 150, 147]
         else:
             sample_contact = None
         # do the FK all at once
         b, s, c = samples.shape
         pos = samples[:, :, :3].to(cond.device)  # np.zeros((sample.shape[0], 3))
         q = samples[:, :, 3:].reshape(b, s, 24, 6)
+      
+        #samples.shape=torch.Size([bs, 150, 147]) pos.shape=torch.Size([bs, 150, 3]) q.shape=torch.Size([bs, 150, 24, 6]) # 24*6+3=147
+      
         # go 6d to ax
-        q = ax_from_6v(q).to(cond.device)
+        q = ax_from_6v(q).to(cond.device) # q.shape=torch.Size([bs, 150, 24, 3])
 
         if mode == "long":
             b, s, c1, c2 = q.shape
@@ -651,9 +656,13 @@ class GaussianDiffusion(nn.Module):
             else:
                 full_pos = pos
                 full_q = q
+              
+            # full_q.shape=torch.Size([bs=1, 375, 24, 3]) full_pos.shape=torch.Size([bs=1, 375, 3]) # 如果用4个片段叠合，则是375帧(相邻片段重叠2.5秒，四个5秒的片段，最终叠合后是12.5秒，375=12.5秒*30帧)
             full_pose = (
                 self.smpl.forward(full_q, full_pos).detach().cpu().numpy()
             )  # b, s, 24, 3
+            # full_pose.shape == (bs=1, 375, 24, 3)
+
             # squeeze the batch dimension away and render
             skeleton_render(
                 full_pose[0],
@@ -670,9 +679,9 @@ class GaussianDiffusion(nn.Module):
                 Path(fk_out).mkdir(parents=True, exist_ok=True)
                 pickle.dump(
                     {
-                        "smpl_poses": full_q.squeeze(0).reshape((-1, 72)).cpu().numpy(),
-                        "smpl_trans": full_pos.squeeze(0).cpu().numpy(),
-                        "full_pose": full_pose[0],
+                        "smpl_poses": full_q.squeeze(0).reshape((-1, 72)).cpu().numpy(), # .shape = (375=12.5秒x30帧每秒, 72=24*3)
+                        "smpl_trans": full_pos.squeeze(0).cpu().numpy(), # .shape = (375, 3)
+                        "full_pose": full_pose[0], # .shape = (375, 24, 3)
                     },
                     open(os.path.join(fk_out, outname), "wb"),
                 )
@@ -684,6 +693,7 @@ class GaussianDiffusion(nn.Module):
             if sample_contact is not None
             else None
         )
+      
 
         def inner(xx):
             num, pose = xx
