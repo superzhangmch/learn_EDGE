@@ -80,7 +80,7 @@ class FbxReadWrite(object):
         rotation = R.from_quat(np.array([ -0.7071068, 0, 0, 0.7071068 ])) # -90 degrees about the x axis
 
         # 1. Write smpl_poses
-        smpl_poses = smpl_params["smpl_poses"]
+        smpl_poses = smpl_params["smpl_poses"] # .shape = [seq, 24关节*每关节3维=72]
         for idx, name in enumerate(names):
             node = lRootNode.FindChild(name)
             rotvec = smpl_poses[:, idx * 3 : idx * 3 + 3]
@@ -109,7 +109,7 @@ class FbxReadWrite(object):
                 print("Failed to write {}, {}".format(name, "z"))
 
         # 3. Write smpl_trans to f_avg_root
-        smpl_trans = rotation.apply(smpl_params["smpl_trans"])
+        smpl_trans = rotation.apply(smpl_params["smpl_trans"]) # .shape = [seq, 3]
         name = "m_avg_Pelvis"
         node = lRootNode.FindChild(name)
         lCurve = node.LclTranslation.GetCurve(lAnimLayer, "X", True)
